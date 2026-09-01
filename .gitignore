@@ -1,0 +1,10 @@
+node_modules/
+.wrangler/
+dist/
+.dev.vars
+.DS_Store
+worker-configuration.d.ts
+
+# Prompt history is generated from the local session transcript and submitted
+# separately — it contains verbatim developer messages and is not published.
+docs/PROMPTS.md

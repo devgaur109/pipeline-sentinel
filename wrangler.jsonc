@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pipeline-sentinel",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  // Chat UI served as static assets (free plan, no Pages project needed)
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+
+  // Workers AI: Llama 3.3 70B for reasoning, bge-small for embeddings
+  "ai": { "binding": "AI" },
+
+  // Long-term memory: past failures + their embeddings
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pipeline-sentinel-db",
+      "database_id": "b4f1a94b-aff1-49c6-aed1-7dc21e481986"
+    }
+  ],
+
+  // Per-repo coordination: dedupe, in-flight state, chat session
+  "durable_objects": {
+    "bindings": [{ "name": "REPO_STATE", "class_name": "RepoState" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["RepoState"] }
+  ],
+
+  // Durable multi-step triage pipeline with retries + human-in-the-loop
+  "workflows": [
+    {
+      "binding": "TRIAGE_WORKFLOW",
+      "name": "triage-workflow",
+      "class_name": "TriageWorkflow"
+    }
+  ]
+}

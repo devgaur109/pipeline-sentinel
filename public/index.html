@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <title>Pipeline Sentinel</title>
+  <meta name="description" content="AI triage for failed CI pipelines." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c0e13'/%3E%3Cpath d='M18 4 8 18h6l-2 10 12-15h-7z' fill='%23ffb224'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Static, author-authored icon sprite. Referenced with <use>; never built from server data. -->
+  <svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12 20 4l-5 16-3.5-6.5z"/><path d="M11.5 13.5 20 4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6 18 18M18 6 6 18"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L20 8l-4-4L4 16z"/><path d="M14 6l4 4"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4.5M12 17.4v.2"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 0 0-5.7-5.7L11.6 6.7"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 1 0 5.7 5.7l1.4-1.4"/></symbol>
+    <symbol id="i-memory" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2.5"/><path d="M9.5 2.5v3.5M14.5 2.5v3.5M9.5 18v3.5M14.5 18v3.5M2.5 9.5H6M2.5 14.5H6M18 9.5h3.5M18 14.5h3.5"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v6.2L4.6 18A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-3L14 9.2V3"/><path d="M8.5 3h7"/><path d="M6.8 15h10.4"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__mark"><svg class="ico" aria-hidden="true"><use href="#i-bolt"/></svg></span>
+      <span class="brand__name">Pipeline<span class="brand__name-dim">Sentinel</span></span>
+    </div>
+
+    <div class="topbar__repo">
+      <label class="field">
+        <span class="field__label">repo</span>
+        <select id="repo-select" class="select" aria-label="Select repository"></select>
+      </label>
+    </div>
+
+    <div class="topbar__spacer"></div>
+
+    <div id="health-strip" class="health" role="status" aria-live="polite" aria-label="Binding health"></div>
+
+    <button id="btn-refresh" class="btn btn--ghost btn--icon" type="button" title="Refresh now" aria-label="Refresh now">
+      <svg class="ico" aria-hidden="true"><use href="#i-refresh"/></svg>
+    </button>
+
+    <button id="btn-replay" class="btn btn--accent" type="button">
+      <svg class="ico" aria-hidden="true"><use href="#i-play"/></svg>
+      <span>Replay a demo failure</span>
+    </button>
+  </header>
+
+  <nav class="pane-tabs" aria-label="Panes">
+    <button class="pane-tab is-active" type="button" data-pane="feed">Feed</button>
+    <button class="pane-tab" type="button" data-pane="detail">Detail</button>
+    <button class="pane-tab" type="button" data-pane="chat">Chat</button>
+  </nav>
+
+  <main class="app" id="app" data-mobile-pane="feed">
+
+    <!-- ---------------------------------------------------------------- -->
+    <!-- LEFT: failure feed                                               -->
+    <!-- ---------------------------------------------------------------- -->
+    <section class="pane pane--feed" data-pane="feed" aria-labelledby="feed-title">
+      <div class="pane__head">
+        <h2 class="pane__title" id="feed-title">Failures</h2>
+        <span id="feed-count" class="pane__meta"></span>
+        <span class="live" id="live-dot" title="Polling every 5s"><i></i>live</span>
+      </div>
+      <div class="pane__body" id="feed-body"></div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <!-- CENTER: detail                                                   -->
+    <!-- ---------------------------------------------------------------- -->
+    <section class="pane pane--detail" data-pane="detail" aria-labelledby="detail-title">
+      <div class="pane__head">
+        <h2 class="pane__title" id="detail-title">Triage</h2>
+        <span id="detail-meta" class="pane__meta"></span>
+      </div>
+      <div class="pane__body" id="detail-body"></div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <!-- RIGHT: stats + chat                                              -->
+    <!-- ---------------------------------------------------------------- -->
+    <aside class="pane pane--chat" data-pane="chat" aria-labelledby="chat-title">
+      <div id="stats-strip" class="stats"></div>
+
+      <div class="pane__head pane__head--sub">
+        <h2 class="pane__title" id="chat-title">Ask about this repo</h2>
+        <span id="chat-repo" class="pane__meta mono"></span>
+      </div>
+
+      <div class="pane__body chat__log" id="chat-log" role="log" aria-live="polite" aria-relevant="additions text"></div>
+
+      <div class="chat__foot">
+        <div class="chips" id="chat-chips"></div>
+        <div id="chat-error" class="chat-error-host" hidden></div>
+        <form class="composer" id="chat-form" autocomplete="off">
+          <textarea id="chat-input" class="composer__input" rows="1" placeholder="Ask about failures in this repo…" aria-label="Message"></textarea>
+          <button id="chat-send" class="btn btn--accent btn--icon" type="submit" aria-label="Send">
+            <svg class="ico" aria-hidden="true"><use href="#i-send"/></svg>
+          </button>
+        </form>
+      </div>
+    </aside>
+  </main>
+
+  <div id="toast-host" class="toast-host" role="status" aria-live="polite"></div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "pipeline-sentinel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cf-typegen": "wrangler types",
+    "db:local": "wrangler d1 execute pipeline-sentinel-db --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute pipeline-sentinel-db --remote --file=./schema.sql",
+    "seed:local": "wrangler d1 execute pipeline-sentinel-db --local --file=./fixtures/seed.sql",
+    "seed:embed": "curl -sS -X POST http://localhost:8787/api/admin/reembed"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260901.1",
+    "@types/node": "^26.4.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.128.0"
+  },
+  "dependencies": {
+    "hono": "^4.13.5"
+  }
+}

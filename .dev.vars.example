@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local dev (git-ignored).
+# When unset, webhook HMAC verification is SKIPPED and a warning is logged —
+# convenient for local demos, never do this in production.
+WEBHOOK_SECRET=
